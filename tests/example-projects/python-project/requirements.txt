@@ -1,0 +1,7 @@
+requests==2.2.1
+flask==0.12.2
+pandas==0.15.2
+numpy==1.13.1
+fabric==2.6.0
+boto==2.49.0
+pycrypto==2.6.1

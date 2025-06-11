@@ -1,0 +1,36 @@
+name: 'extractor'
+description: 'Extract direct dependencies from a manifest file (Python, JS, etc.)'
+author: 'Zachary R'
+branding:
+  color: 'blue'
+  icon: 'package'
+
+runs:
+  using: 'composite'
+  steps:
+    - name: Set up Python
+      uses: actions/setup-python@v5
+      with:
+        python-version: '3.13'
+    - name: Install dependencies
+      run: pip install -r ${{ github.action_path }}/requirements.txt
+      shell: bash
+    - name: Extract dependencies
+      id: extract
+      run: |
+        output=$(python -m extractor.cli "${{ inputs.manifest }}"${{ inputs.manifest_type && format(' --manifest-type {0}', inputs.manifest_type) || '' }})
+        echo "output=$output" >> $GITHUB_OUTPUT
+      shell: bash
+
+inputs:
+  manifest:
+    description: 'Path to the manifest file (e.g., requirements.txt, package.json)'
+    required: true
+  manifest_type:
+    description: 'Type of manifest (optional, e.g., requirements.txt, package.json, poetry.lock)'
+    required: false
+
+outputs:
+  output:
+    description: 'Extracted dependencies as JSON (single-line)'
+    value: ${{ steps.extract.outputs.output }}

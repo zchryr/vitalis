@@ -1,0 +1,43 @@
+name: CI - Test Extractor Action
+
+on:
+  push:
+    paths:
+      - 'extractor/**'
+      - '.github/workflows/ci-test-extractor.yml'
+  workflow_dispatch:
+
+jobs:
+  test-extractor:
+    name: ${{ matrix.manifest_type }}
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: read
+    strategy:
+      matrix:
+        include:
+          - manifest: tests/example-projects/python-project/requirements.txt
+            manifest_type: requirements.txt
+          - manifest: tests/example-projects/python-project/pyproject.toml
+            manifest_type: pyproject.toml
+          - manifest: tests/example-projects/python-project/poetry.lock
+            manifest_type: poetry.lock
+          - manifest: tests/example-projects/conda-project/environment.yml
+            manifest_type: environment.yml
+          - manifest: tests/example-projects/node-project/package.json
+            manifest_type: package.json
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: extractor
+        id: extract_deps
+        uses: ./extractor
+        with:
+          manifest: ${{ matrix.manifest }}
+          manifest_type: ${{ matrix.manifest_type }}
+
+      - name: Show formatted dependencies
+        run: echo '${{ steps.extract_deps.outputs.output }}' | jq '.'
