@@ -1,0 +1,14 @@
+name: User Story
+description: Capture a single user requirement
+labels: ["user story"]
+body:
+  - type: textarea
+    attributes:
+      label: Story
+      description: "As a <role>, I want <capability>, so that <benefit>."
+      placeholder: "As a [role], I want [goal], so that [reason]."
+  - type: textarea
+    attributes:
+      label: Acceptance Criteria
+      description: "Checklist of conditions that must be met for this story to be complete."
+      placeholder: "- [ ] Condition 1\n- [ ] Condition 2"
