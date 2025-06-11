@@ -71,3 +71,6 @@ vendor/
 .settings/
 *.sublime-workspace
 *.sublime-project
+
+# Etc.
+planning/
