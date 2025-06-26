@@ -23,6 +23,47 @@ This repository aims to provide tools and services for:
 5. Evaluating repository health through activity metrics and documentation presence
 6. Identifying potential maintenance issues through inactivity tracking
 
+## Installation
+
+### From Test PyPI
+
+```bash
+pipx install --index-url https://test.pypi.org/simple/ vitalis
+```
+
+### From Source
+
+```bash
+git clone https://github.com/zchryr/vitalis.git
+cd vitalis
+pip install -e .
+```
+
+## CLI Usage
+
+The `vitalis` CLI provides commands for extracting dependencies from manifest files:
+
+```bash
+# Check CLI health
+vitalis health
+
+# Extract dependencies from a manifest file
+vitalis extract requirements.txt
+vitalis extract package.json
+vitalis extract pyproject.toml
+
+# Specify manifest type explicitly
+vitalis extract myfile.txt --manifest-type requirements.txt
+```
+
+### Supported Manifest Types
+
+- `requirements.txt` (Python pip)
+- `pyproject.toml` (Python Poetry/setuptools)
+- `poetry.lock` (Python Poetry)
+- `package.json` (Node.js npm)
+- `environment.yml` (Conda)
+
 ## Getting Started
 
 ### Analyzer API
