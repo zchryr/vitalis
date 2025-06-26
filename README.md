@@ -34,7 +34,7 @@ pipx install --index-url https://test.pypi.org/simple/ vitalis
 ### From Source
 
 ```bash
-git clone <repository-url>
+git clone https://github.com/zchryr/vitalis.git
 cd vitalis
 pip install -e .
 ```
