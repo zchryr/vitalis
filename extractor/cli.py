@@ -7,10 +7,14 @@ from extractor.extractor.pyproject_toml import extract_pyproject_toml
 from extractor.extractor.package_json import extract_package_json
 from extractor.extractor.poetry_lock import extract_poetry_lock
 
-def main(
+app = typer.Typer(help="Vitalis - Dependency manifest extractor and analyzer")
+
+@app.command()
+def extract(
     file: Path = typer.Argument(..., help="Path to the manifest file"),
     manifest_type: str = typer.Option(None, help="Type of manifest: requirements.txt, environment.yml, pyproject.toml, package.json, poetry.lock")
 ):
+    """Extract dependencies from a manifest file"""
     if not file.exists():
         typer.echo(f"File not found: {file}", err=True)
         raise typer.Exit(1)
@@ -45,5 +49,10 @@ def main(
         raise typer.Exit(1)
     typer.echo(json.dumps([dep.__dict__ for dep in deps]))
 
+@app.command()
+def health():
+    """Check the health of the vitalis CLI"""
+    typer.echo("✅ Vitalis CLI is healthy!")
+
 if __name__ == "__main__":
-    typer.run(main)
+    app()
