@@ -52,7 +52,7 @@ def extract(
 @app.command()
 def health():
     """Check the health of the vitalis CLI"""
-    typer.echo("✅ Vitalis CLI is healthy!")
+    typer.echo("Vitalis CLI is healthy!")
 
 if __name__ == "__main__":
     app()
