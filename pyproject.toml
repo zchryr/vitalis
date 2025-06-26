@@ -7,7 +7,7 @@ name = "vitalis"
 version = "0.1.0"
 description = "A CLI tool for extracting and analyzing dependency manifests across multiple ecosystems"
 readme = "README.md"
-license = "MIT"
+license = "Apache-2.0"
 authors = [
     {name = "Vitalis Team"}
 ]
@@ -15,7 +15,6 @@ classifiers = [
     "Development Status :: 3 - Alpha",
     "Intended Audience :: Developers",
     "Programming Language :: Python :: 3",
-    "Programming Language :: Python :: 3.8",
     "Programming Language :: Python :: 3.9",
     "Programming Language :: Python :: 3.10",
     "Programming Language :: Python :: 3.11",
@@ -39,9 +38,9 @@ dev = [
 vitalis = "extractor.cli:app"
 
 [project.urls]
-"Homepage" = "https://github.com/your-org/vitalis"
-"Bug Reports" = "https://github.com/your-org/vitalis/issues"
-"Source" = "https://github.com/your-org/vitalis"
+"Homepage" = "https://github.com/zchryr/vitalis"
+"Bug Reports" = "https://github.com/zchryr/vitalis/issues"
+"Source" = "https://github.com/zchryr/vitalis"
 
 [tool.setuptools.packages.find]
 include = ["extractor*", "analyzer*"]
