@@ -14,13 +14,13 @@ def _print_fallback_human_readable(deps_data):
     typer.echo("📦 Basic Dependency Extraction")
     typer.echo("=" * 40)
     typer.echo(f"\nFound {len(deps_data)} dependencies:")
-    
+
     for dep in deps_data:
         name = dep.get("name", "Unknown")
         version = dep.get("version", "Unknown")
         typer.echo(f"• {name} ({version})")
-    
-    typer.echo(f"\n⚠️  Note: Full analysis unavailable (analyzer service offline)")
+
+    typer.echo(f"\n   Note: Full analysis unavailable (analyzer service offline)")
 
 @app.command()
 def extract(
@@ -32,7 +32,7 @@ def extract(
     if not file.exists():
         typer.echo(f"File not found: {file}", err=True)
         raise typer.Exit(1)
-    
+
     # Infer manifest type from file name if not provided
     if not manifest_type:
         name = file.name.lower()
@@ -49,7 +49,7 @@ def extract(
         else:
             typer.echo("Could not infer manifest type. Please specify --manifest-type.", err=True)
             raise typer.Exit(1)
-    
+
     # Extract dependencies based on manifest type
     if manifest_type == 'requirements.txt':
         deps = extract_requirements_txt(str(file))
@@ -64,7 +64,7 @@ def extract(
     else:
         typer.echo(f"Unsupported manifest type: {manifest_type}", err=True)
         raise typer.Exit(1)
-    
+
     # Format output
     deps_data = [dep.__dict__ for dep in deps]
     if format == "json":
