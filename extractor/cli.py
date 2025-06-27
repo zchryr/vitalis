@@ -11,7 +11,7 @@ app = typer.Typer(help="Vitalis - Dependency manifest extractor and analyzer")
 
 def _print_fallback_human_readable(deps_data):
     """Print fallback extraction result in human-readable format"""
-    typer.echo("📦 Basic Dependency Extraction")
+    typer.echo("Basic Dependency Extraction")
     typer.echo("=" * 40)
     typer.echo(f"\nFound {len(deps_data)} dependencies:")
 
