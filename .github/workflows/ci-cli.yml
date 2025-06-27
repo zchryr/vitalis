@@ -1,4 +1,4 @@
-name: CLI Matrix Tests
+name: CI - CLI Matrix Tests
 
 on:
   pull_request:
@@ -53,7 +53,7 @@ jobs:
         run: |
           python -m extractor.cli extract tests/example-projects/python-project/requirements.txt
 
-      - name: Test CLI extract command (package.json) 
+      - name: Test CLI extract command (package.json)
         run: |
           python -m extractor.cli extract tests/example-projects/node-project/package.json
 
@@ -82,7 +82,7 @@ jobs:
           elif [ "$RUNNER_OS" == "macOS" ]; then
             brew install jq
           fi
-          
+
           # Test JSON is valid and has expected structure
           output=$(python -m extractor.cli extract tests/example-projects/python-project/requirements.txt --format json)
           echo "$output" | jq '.' > /dev/null
