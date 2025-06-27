@@ -165,7 +165,7 @@ jobs:
             # Convert to CRLF on Windows
             sed -i 's/$/\r/' test_crlf.txt 2>/dev/null || true
           fi
-          python -m extractor.cli extract test_crlf.txt
+          python -m extractor.cli extract test_crlf.txt --manifest-type requirements.txt
 
       - name: Test Unicode handling
         shell: bash
@@ -173,7 +173,7 @@ jobs:
           # Create a requirements file with Unicode package names (if they exist)
           echo "requests>=2.0.0" > test_unicode.txt
           echo "flask>=1.0.0" >> test_unicode.txt
-          python -m extractor.cli extract test_unicode.txt --format json
+          python -m extractor.cli extract test_unicode.txt --manifest-type requirements.txt --format json
 
   test-edge-cases:
     name: Test Edge Cases
@@ -196,7 +196,7 @@ jobs:
       - name: Test empty manifest files
         run: |
           touch empty_requirements.txt
-          python -m extractor.cli extract empty_requirements.txt --format json
+          python -m extractor.cli extract empty_requirements.txt --manifest-type requirements.txt --format json
 
       - name: Test malformed manifest files
         run: |
