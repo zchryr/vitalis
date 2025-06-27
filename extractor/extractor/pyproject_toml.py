@@ -1,5 +1,5 @@
 import toml
-from extractor.models import Dependency
+from core.models import Dependency
 from typing import List
 
 def extract_pyproject_toml(path: str) -> List[Dependency]:

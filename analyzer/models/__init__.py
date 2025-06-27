@@ -1,7 +1,7 @@
 """
 This module exposes the main data models for dependencies, schemas, and API interfaces.
 """
-from .dependency import Dependency  # Dependency data class
+from core.models import Dependency  # Dependency data class
 from .schemas import (
     HealthCheckResult,      # Result of a repository health check
     HealthCheckResponse,    # Response for batch health checks
