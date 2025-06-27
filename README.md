@@ -1,5 +1,7 @@
 # Vitalis
 
+[![CLI Matrix Tests](https://github.com/zchryr/vitalis/actions/workflows/ci-cli.yml/badge.svg)](https://github.com/zchryr/vitalis/actions/workflows/ci-cli.yml)
+
 A CLI tool for extracting and analyzing dependency manifests across multiple programming languages and package managers.
 
 ## Quick Start

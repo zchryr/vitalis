@@ -103,9 +103,12 @@ class TestJsonFormat:
         result = runner.invoke(app, ['extract', '--help'])
 
         assert result.exit_code == 0
-        assert '--format' in result.output
-        assert 'human or json' in result.output
-        assert 'default: human' in result.output
+        # Strip ANSI color codes for reliable string matching
+        import re
+        clean_output = re.sub(r'\x1b\[[0-9;]*m', '', result.output)
+        assert '--format' in clean_output
+        assert 'human or json' in clean_output
+        assert 'default: human' in clean_output
 
     def test_json_format_with_file_write_and_validation(self):
         """Integration test: write JSON to file and validate with schema"""
