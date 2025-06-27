@@ -7,6 +7,7 @@ on:
     branches: [ main ]
   release:
     types: [ published ]
+  workflow_dispatch: # Allow manual triggering of the workflow
 
 jobs:
   test:
@@ -44,7 +45,7 @@ jobs:
           pipx install .
           vitalis health
 
-      - name: Test python -m pipx installation  
+      - name: Test python -m pipx installation
         run: |
           pipx uninstall vitalis
           python -m pipx install .
