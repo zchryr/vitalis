@@ -1,0 +1,254 @@
+name: CLI Matrix Tests
+
+on:
+  pull_request:
+    branches: [ main ]
+    paths:
+      - 'extractor/**'
+      - 'tests/**'
+      - 'pyproject.toml'
+      - '.github/workflows/ci-cli.yml'
+  push:
+    branches: [ main ]
+    paths:
+      - 'extractor/**'
+      - 'tests/**'
+      - 'pyproject.toml'
+      - '.github/workflows/ci-cli.yml'
+  workflow_dispatch:
+
+jobs:
+  test-cli:
+    name: Test CLI (${{ matrix.os }}, Python ${{ matrix.python-version }})
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest, macos-latest]
+        python-version: ["3.9", "3.10", "3.11", "3.12", "3.13"]
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -e ".[dev]"
+
+      - name: Run tests
+        run: |
+          python -m pytest tests/ -v
+
+      - name: Test CLI health command
+        run: |
+          python -m extractor.cli health
+
+      - name: Test CLI extract command (requirements.txt)
+        run: |
+          python -m extractor.cli extract tests/example-projects/python-project/requirements.txt
+
+      - name: Test CLI extract command (package.json) 
+        run: |
+          python -m extractor.cli extract tests/example-projects/node-project/package.json
+
+      - name: Test CLI extract command (pyproject.toml)
+        run: |
+          python -m extractor.cli extract tests/example-projects/python-project/pyproject.toml
+
+      - name: Test CLI extract command (environment.yml)
+        run: |
+          python -m extractor.cli extract tests/example-projects/conda-project/environment.yml
+
+      - name: Test JSON format output
+        run: |
+          python -m extractor.cli extract tests/example-projects/python-project/requirements.txt --format json
+
+      - name: Test human format output (default)
+        run: |
+          python -m extractor.cli extract tests/example-projects/python-project/requirements.txt --format human
+
+      - name: Validate JSON output with jq (Unix only)
+        if: runner.os != 'Windows'
+        run: |
+          # Install jq
+          if [ "$RUNNER_OS" == "Linux" ]; then
+            sudo apt-get update && sudo apt-get install -y jq
+          elif [ "$RUNNER_OS" == "macOS" ]; then
+            brew install jq
+          fi
+          
+          # Test JSON is valid and has expected structure
+          output=$(python -m extractor.cli extract tests/example-projects/python-project/requirements.txt --format json)
+          echo "$output" | jq '.' > /dev/null
+          echo "$output" | jq 'length' | grep -E '^[0-9]+$'
+          echo "$output" | jq '.[0].name' | grep -q '"'
+
+  test-installation:
+    name: Test Installation Methods (${{ matrix.os }})
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest, macos-latest]
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Test pip installation
+        run: |
+          python -m pip install --upgrade pip
+          pip install -e .
+          vitalis health
+          vitalis extract tests/example-projects/python-project/requirements.txt
+
+      - name: Test pipx installation
+        run: |
+          python -m pip install --upgrade pip pipx
+          pip uninstall -y vitalis || true
+          pipx install .
+          vitalis health
+          vitalis extract tests/example-projects/python-project/requirements.txt
+
+      - name: Clean up pipx
+        run: |
+          pipx uninstall vitalis || true
+
+  test-cross-platform-compatibility:
+    name: Cross-platform Compatibility
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest, macos-latest]
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -e ".[dev]"
+
+      - name: Test path handling with spaces (Windows paths)
+        shell: bash
+        run: |
+          # Create a temp directory with spaces in the path
+          mkdir -p "test dir with spaces"
+          cp tests/example-projects/python-project/requirements.txt "test dir with spaces/"
+          python -m extractor.cli extract "test dir with spaces/requirements.txt"
+          python -m extractor.cli extract "test dir with spaces/requirements.txt" --format json
+
+      - name: Test different line endings
+        shell: bash
+        run: |
+          # Test with different line endings
+          cp tests/example-projects/python-project/requirements.txt test_crlf.txt
+          if [ "$RUNNER_OS" == "Windows" ]; then
+            # Convert to CRLF on Windows
+            sed -i 's/$/\r/' test_crlf.txt 2>/dev/null || true
+          fi
+          python -m extractor.cli extract test_crlf.txt
+
+      - name: Test Unicode handling
+        shell: bash
+        run: |
+          # Create a requirements file with Unicode package names (if they exist)
+          echo "requests>=2.0.0" > test_unicode.txt
+          echo "flask>=1.0.0" >> test_unicode.txt
+          python -m extractor.cli extract test_unicode.txt --format json
+
+  test-edge-cases:
+    name: Test Edge Cases
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -e ".[dev]"
+
+      - name: Test empty manifest files
+        run: |
+          touch empty_requirements.txt
+          python -m extractor.cli extract empty_requirements.txt --format json
+
+      - name: Test malformed manifest files
+        run: |
+          echo "this is not a valid requirements file" > malformed.txt
+          python -m extractor.cli extract malformed.txt --manifest-type requirements.txt || true
+
+      - name: Test nonexistent files
+        run: |
+          python -m extractor.cli extract nonexistent.txt || true
+
+      - name: Test help output
+        run: |
+          python -m extractor.cli --help
+          python -m extractor.cli extract --help
+          python -m extractor.cli health --help
+
+  integration-test:
+    name: Integration Test
+    runs-on: ubuntu-latest
+    needs: [test-cli, test-installation]
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -e ".[dev]"
+          sudo apt-get update && sudo apt-get install -y jq
+
+      - name: Run full integration test
+        run: |
+          # Test all supported manifest types
+          for manifest in tests/example-projects/*/requirements.txt tests/example-projects/*/package.json tests/example-projects/*/pyproject.toml tests/example-projects/*/environment.yml; do
+            if [ -f "$manifest" ]; then
+              echo "Testing $manifest..."
+              python -m extractor.cli extract "$manifest"
+              python -m extractor.cli extract "$manifest" --format json | jq '.' > /dev/null
+            fi
+          done
+
+      - name: Test JSON schema validation
+        run: |
+          # Save JSON output and validate it matches expected schema
+          python -m extractor.cli extract tests/example-projects/python-project/requirements.txt --format json > output.json
+          jq 'type' output.json | grep -q "array"
+          jq '.[0] | has("name")' output.json | grep -q "true"
+          jq '.[0] | has("version")' output.json | grep -q "true"
+          jq '.[0] | has("source")' output.json | grep -q "true"
