@@ -27,16 +27,33 @@ jobs:
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
-          pip install build pytest
+          pip install build pytest pipx
           pip install -e .
 
-      - name: Test CLI installation
+      - name: Test CLI installation (pip)
         run: |
           vitalis health
 
-      - name: Test CLI extraction
+      - name: Test CLI extraction (pip)
         run: |
           vitalis extract tests/example-projects/python-project/requirements.txt
+
+      - name: Test pipx installation
+        run: |
+          pip uninstall -y vitalis
+          pipx install .
+          vitalis health
+
+      - name: Test python -m pipx installation  
+        run: |
+          pipx uninstall vitalis
+          python -m pipx install .
+          vitalis health
+
+      - name: Verify binary on PATH
+        run: |
+          which vitalis
+          vitalis --help
 
   build:
     needs: test

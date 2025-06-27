@@ -1,6 +1,17 @@
 # Vitalis
 
-This repository now provides the functionality for analyzing and monitoring package health across different programming languages and package managers. The new analyzer service offers a seamless workflow from dependency manifest parsing to repository health analysis.
+A CLI tool for extracting and analyzing dependency manifests across multiple programming languages and package managers.
+
+## Quick Start
+
+```bash
+pipx install vitalis
+vitalis health
+```
+
+## Overview
+
+This repository provides functionality for analyzing and monitoring package health across different programming languages and package managers. The analyzer service offers a seamless workflow from dependency manifest parsing to repository health analysis.
 
 ## Repository Structure
 
@@ -24,6 +35,18 @@ This repository aims to provide tools and services for:
 6. Identifying potential maintenance issues through inactivity tracking
 
 ## Installation
+
+### Production
+
+```bash
+pipx install vitalis
+```
+
+### Alternative (if pipx installed via pip)
+
+```bash
+python -m pipx install vitalis
+```
 
 ### From Test PyPI
 
