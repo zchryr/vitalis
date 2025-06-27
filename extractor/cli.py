@@ -10,11 +10,60 @@ from extractor.extractor.poetry_lock import extract_poetry_lock
 
 app = typer.Typer(help="Vitalis - Dependency manifest extractor and analyzer")
 
+def _print_human_readable(analysis_result):
+    """Print analysis result in human-readable format"""
+    typer.echo("🔍 Dependency Analysis Report")
+    typer.echo("=" * 50)
+    
+    if "dependencies" in analysis_result:
+        deps = analysis_result["dependencies"]
+        typer.echo(f"\n📦 Found {len(deps)} dependencies")
+        
+        for dep in deps:
+            name = dep.get("name", "Unknown")
+            version = dep.get("version", "Unknown")
+            health = dep.get("health", {})
+            
+            typer.echo(f"\n• {name} ({version})")
+            
+            if health:
+                if health.get("is_healthy", True):
+                    typer.echo("  ✅ Healthy")
+                else:
+                    typer.echo("  ⚠️  Health issues detected")
+                    if "inactive_days" in health:
+                        typer.echo(f"     - Inactive for {health['inactive_days']} days")
+                    if not health.get("has_license"):
+                        typer.echo("     - No license found")
+                    if not health.get("has_readme"):
+                        typer.echo("     - No README found")
+    
+    if "summary" in analysis_result:
+        summary = analysis_result["summary"]
+        typer.echo(f"\n📊 Summary")
+        typer.echo(f"   Total dependencies: {summary.get('total_dependencies', 0)}")
+        typer.echo(f"   Healthy: {summary.get('healthy_count', 0)}")
+        typer.echo(f"   Issues: {summary.get('unhealthy_count', 0)}")
+
+def _print_fallback_human_readable(deps_data):
+    """Print fallback extraction result in human-readable format"""
+    typer.echo("📦 Basic Dependency Extraction")
+    typer.echo("=" * 40)
+    typer.echo(f"\nFound {len(deps_data)} dependencies:")
+    
+    for dep in deps_data:
+        name = dep.get("name", "Unknown")
+        version = dep.get("version", "Unknown")
+        typer.echo(f"• {name} ({version})")
+    
+    typer.echo(f"\n⚠️  Note: Full analysis unavailable (analyzer service offline)")
+
 @app.command()
 def extract(
     file: Path = typer.Argument(..., help="Path to the manifest file"),
     manifest_type: str = typer.Option(None, help="Type of manifest: requirements.txt, environment.yml, pyproject.toml, package.json, poetry.lock"),
-    policy: int = typer.Option(365, "--policy", help="Max inactive days threshold for repository health checks (default: 365)")
+    policy: int = typer.Option(365, "--policy", help="Max inactive days threshold for repository health checks (default: 365)"),
+    format: str = typer.Option("human", "--format", help="Output format: human or json (default: human)")
 ):
     """Extract dependencies from a manifest file and analyze with policy"""
     if not file.exists():
@@ -58,10 +107,15 @@ def extract(
         response.raise_for_status()
         
         analysis_result = response.json()
-        typer.echo(json.dumps(analysis_result, indent=2))
+        if format == "json":
+            typer.echo(json.dumps(analysis_result, indent=2))
+        else:
+            # Human-readable format
+            _print_human_readable(analysis_result)
         
     except requests.exceptions.ConnectionError:
-        typer.echo("Warning: Analyzer service not available. Falling back to basic extraction.", err=True)
+        if format == "human":
+            typer.echo("Warning: Analyzer service not available. Falling back to basic extraction.", err=True)
         # Fallback to basic extraction
         if manifest_type == 'requirements.txt':
             deps = extract_requirements_txt(str(file))
@@ -76,7 +130,13 @@ def extract(
         else:
             typer.echo(f"Unsupported manifest type: {manifest_type}", err=True)
             raise typer.Exit(1)
-        typer.echo(json.dumps([dep.__dict__ for dep in deps]))
+        
+        # Format fallback output
+        deps_data = [dep.__dict__ for dep in deps]
+        if format == "json":
+            typer.echo(json.dumps(deps_data, indent=2))
+        else:
+            _print_fallback_human_readable(deps_data)
         
     except requests.exceptions.RequestException as e:
         typer.echo(f"Error calling analyzer service: {e}", err=True)
