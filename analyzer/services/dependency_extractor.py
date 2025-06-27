@@ -3,7 +3,7 @@ import json
 import toml
 import yaml
 from typing import List
-from ..models.dependency import Dependency
+from core.models import Dependency
 
 def extract_requirements_txt_from_content(content: str) -> List[Dependency]:
     """

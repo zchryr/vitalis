@@ -45,5 +45,5 @@ vitalis = "extractor.cli:app"
 "Source" = "https://github.com/zchryr/vitalis"
 
 [tool.setuptools.packages.find]
-include = ["extractor*", "analyzer*"]
+include = ["extractor*", "analyzer*", "core*"]
 exclude = ["tests*"]

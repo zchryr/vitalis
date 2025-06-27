@@ -1,4 +1,4 @@
-from extractor.models import Dependency
+from core.models import Dependency
 from typing import List
 
 def extract_requirements_txt(path: str) -> List[Dependency]:

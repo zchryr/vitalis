@@ -1,5 +1,5 @@
 import json
-from extractor.models import Dependency
+from core.models import Dependency
 from typing import List
 
 def extract_package_json(path: str) -> List[Dependency]:

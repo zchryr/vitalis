@@ -1,5 +1,5 @@
 import yaml
-from extractor.models import Dependency
+from core.models import Dependency
 from typing import List
 
 def extract_environment_yml(path: str) -> List[Dependency]:
