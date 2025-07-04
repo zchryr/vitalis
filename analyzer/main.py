@@ -1,26 +1,37 @@
 from fastapi import FastAPI, HTTPException, UploadFile, File
+from typing import Dict, List, Any, Optional
 from .models.schemas import AnalysisRequest, Policy
 from .services import dependency_extractor, package_info, repo_health
 from .services.repo_health import GITHUB_TOKEN, GITLAB_TOKEN
+from core.models import Dependency
 
 # Initialize FastAPI app
 app = FastAPI()
 
 @app.post("/v1/analyze")
-def analyze(request: AnalysisRequest):
-    """
-    Analyze the provided manifest content to extract dependencies, fetch package info, and check repository health.
+def analyze(request: AnalysisRequest) -> Dict[str, List[Dict[str, Any]]]:
+    """Analyze manifest content to extract dependencies and check repository health.
+    
+    Extracts dependencies from the provided manifest content, fetches package information
+    from appropriate registries (PyPI/npm), and performs repository health checks for
+    supported platforms (GitHub/GitLab).
+    
     Args:
-        request (AnalysisRequest): The analysis request containing manifest content, type, and policy.
+        request: The analysis request containing manifest content, type, and policy.
+        
     Returns:
-        dict: Results for each dependency including package info and health check.
+        Dictionary containing a 'results' key with a list of analysis results for each
+        dependency. Each result includes dependency name, package info, and health data.
+        
+    Raises:
+        HTTPException: If the manifest type is not supported (status 400).
     """
     # 1. Extract dependencies from manifest content
     manifest_type = request.manifest_type.lower()
     content = request.manifest_content
 
     # Map manifest types to their respective extractor functions
-    extractor_map = {
+    extractor_map: Dict[str, Any] = {
         'requirements.txt': dependency_extractor.extract_requirements_txt_from_content,
         'package.json': dependency_extractor.extract_package_json_from_content,
         'pyproject.toml': dependency_extractor.extract_pyproject_toml_from_content,
@@ -33,8 +44,8 @@ def analyze(request: AnalysisRequest):
         raise HTTPException(status_code=400, detail=f"Unsupported manifest type: {manifest_type}")
 
     # Extract dependencies using the appropriate extractor
-    dependencies = extractor_map[manifest_type](content)
-    results = []
+    dependencies: List[Dependency] = extractor_map[manifest_type](content)
+    results: List[Dict[str, Any]] = []
 
     for dep in dependencies:
         # 2. Get package info and repo URL
@@ -115,17 +126,26 @@ def analyze(request: AnalysisRequest):
     return {"results": results}
 
 @app.post("/v1/analyze/file")
-def post_file(file: UploadFile = File(...)):
-    """
-    Analyze a manifest file uploaded by the user. Infers manifest type from filename and delegates to analyze().
+def post_file(file: UploadFile = File(...)) -> Dict[str, List[Dict[str, Any]]]:
+    """Analyze an uploaded manifest file.
+    
+    Automatically infers the manifest type from the filename and performs the same
+    analysis as the /v1/analyze endpoint. Uses default policy settings.
+    
     Args:
-        file (UploadFile): The uploaded manifest file.
+        file: The uploaded manifest file to analyze.
+        
     Returns:
-        dict: Analysis results for the uploaded file.
+        Dictionary containing analysis results for the uploaded file.
+        
+    Raises:
+        HTTPException: If the manifest type cannot be inferred from filename (status 400).
     """
     # Infer manifest type from filename
-    filename = file.filename.lower()
-    manifest_type_map = {
+    if file.filename is None:
+        raise HTTPException(status_code=400, detail="No filename provided")
+    filename: str = file.filename.lower()
+    manifest_type_map: Dict[str, str] = {
         "requirements.txt": "requirements.txt",
         "package.json": "package.json",
         "pyproject.toml": "pyproject.toml",
@@ -134,7 +154,7 @@ def post_file(file: UploadFile = File(...)):
         "poetry.lock": "poetry.lock"
     }
 
-    manifest_type = None
+    manifest_type: Optional[str] = None
     for ext, type_name in manifest_type_map.items():
         if filename.endswith(ext):
             manifest_type = type_name
@@ -145,7 +165,7 @@ def post_file(file: UploadFile = File(...)):
         raise HTTPException(status_code=400, detail=f"Could not infer manifest type from filename: {filename}")
 
     # Read file content and create default policy
-    content = file.file.read().decode("utf-8")
-    policy = Policy()
-    request = AnalysisRequest(manifest_content=content, manifest_type=manifest_type, policy=policy)
+    content: str = file.file.read().decode("utf-8")
+    policy: Policy = Policy()
+    request: AnalysisRequest = AnalysisRequest(manifest_content=content, manifest_type=manifest_type, policy=policy)
     return analyze(request)

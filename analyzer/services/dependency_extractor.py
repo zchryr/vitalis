@@ -2,7 +2,7 @@ import re
 import json
 import toml
 import yaml
-from typing import List
+from typing import List, Dict, Any, Union
 from core.models import Dependency
 
 def extract_requirements_txt_from_content(content: str) -> List[Dependency]:
@@ -13,7 +13,7 @@ def extract_requirements_txt_from_content(content: str) -> List[Dependency]:
     Returns:
         List[Dependency]: List of extracted dependencies.
     """
-    dependencies = []
+    dependencies: List[Dependency] = []
     for line in content.splitlines():
         line = line.strip()
         if not line or line.startswith('#'):
@@ -35,8 +35,8 @@ def extract_package_json_from_content(content: str) -> List[Dependency]:
     Returns:
         List[Dependency]: List of extracted dependencies.
     """
-    dependencies = []
-    data = json.loads(content)
+    dependencies: List[Dependency] = []
+    data: Dict[str, Any] = json.loads(content)
     for section in ['dependencies', 'devDependencies']:
         for name, version in data.get(section, {}).items():
             dependencies.append(Dependency(name=name, version=version, source='npm', raw=f'{name}: {version}'))
@@ -50,12 +50,13 @@ def extract_pyproject_toml_from_content(content: str) -> List[Dependency]:
     Returns:
         List[Dependency]: List of extracted dependencies.
     """
-    dependencies = []
-    data = toml.loads(content)
-    poetry_deps = data.get('tool', {}).get('poetry', {}).get('dependencies', {})
+    dependencies: List[Dependency] = []
+    data: Dict[str, Any] = toml.loads(content)
+    poetry_deps: Dict[str, Union[str, Dict[str, Any]]] = data.get('tool', {}).get('poetry', {}).get('dependencies', {})
     for name, version in poetry_deps.items():
         if name.lower() == 'python':
             continue  # Skip the Python version itself
+        version_str: Union[str, None]
         if isinstance(version, dict):
             version_str = version.get('version')
         else:
@@ -71,8 +72,8 @@ def extract_environment_yml_from_content(content: str) -> List[Dependency]:
     Returns:
         List[Dependency]: List of extracted dependencies.
     """
-    dependencies = []
-    data = yaml.safe_load(content)
+    dependencies: List[Dependency] = []
+    data: Dict[str, Any] = yaml.safe_load(content)
     for dep in data.get('dependencies', []):
         if isinstance(dep, str):
             # Conda dependency
@@ -80,7 +81,8 @@ def extract_environment_yml_from_content(content: str) -> List[Dependency]:
             dependencies.append(Dependency(name=name.strip(), version='='.join(version) if version else None, source='conda', raw=dep))
         elif isinstance(dep, dict) and 'pip' in dep:
             # Pip dependencies inside environment.yml
-            for pip_dep in dep['pip']:
+            pip_deps: List[str] = dep['pip']
+            for pip_dep in pip_deps:
                 name, *version = pip_dep.split('==')
                 dependencies.append(Dependency(name=name.strip(), version=version[0] if version else None, source='pip', raw=pip_dep))
     return dependencies
@@ -93,13 +95,15 @@ def extract_poetry_lock_from_content(content: str) -> List[Dependency]:
     Returns:
         List[Dependency]: List of extracted dependencies.
     """
-    dependencies = []
+    dependencies: List[Dependency] = []
     import re as _re
     # Split the file into package blocks
-    packages = _re.split(r'\n\[\[package\]\]\n', content)
+    packages: List[str] = _re.split(r'\n\[\[package\]\]\n', content)
     for pkg in packages:
-        lines = pkg.strip().splitlines()
-        name = version = category = None
+        lines: List[str] = pkg.strip().splitlines()
+        name: Union[str, None] = None
+        version: Union[str, None] = None
+        category: Union[str, None] = None
         for line in lines:
             if line.startswith('name = '):
                 name = line.split('=', 1)[1].strip().strip('"')
