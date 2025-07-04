@@ -11,18 +11,18 @@ app = FastAPI()
 @app.post("/v1/analyze")
 def analyze(request: AnalysisRequest) -> Dict[str, List[Dict[str, Any]]]:
     """Analyze manifest content to extract dependencies and check repository health.
-    
+
     Extracts dependencies from the provided manifest content, fetches package information
     from appropriate registries (PyPI/npm), and performs repository health checks for
     supported platforms (GitHub/GitLab).
-    
+
     Args:
         request: The analysis request containing manifest content, type, and policy.
-        
+
     Returns:
         Dictionary containing a 'results' key with a list of analysis results for each
         dependency. Each result includes dependency name, package info, and health data.
-        
+
     Raises:
         HTTPException: If the manifest type is not supported (status 400).
     """
@@ -105,7 +105,7 @@ def analyze(request: AnalysisRequest) -> Dict[str, List[Dict[str, Any]]]:
                     "latest_version": package_info_data.get("version") if dep.source != 'npm' else info.get("dist-tags", {}).get("latest"),
                     "created_date": package_info.get_latest_version_release_date(info) if dep.source != 'npm' else info.get("time", {}).get(info.get("dist-tags", {}).get("latest"))
                 },
-                "health": health.dict()
+                "health": health.model_dump()
             })
         else:
             # If no supported repo URL, return package info without health
@@ -128,16 +128,16 @@ def analyze(request: AnalysisRequest) -> Dict[str, List[Dict[str, Any]]]:
 @app.post("/v1/analyze/file")
 def post_file(file: UploadFile = File(...)) -> Dict[str, List[Dict[str, Any]]]:
     """Analyze an uploaded manifest file.
-    
+
     Automatically infers the manifest type from the filename and performs the same
     analysis as the /v1/analyze endpoint. Uses default policy settings.
-    
+
     Args:
         file: The uploaded manifest file to analyze.
-        
+
     Returns:
         Dictionary containing analysis results for the uploaded file.
-        
+
     Raises:
         HTTPException: If the manifest type cannot be inferred from filename (status 400).
     """
