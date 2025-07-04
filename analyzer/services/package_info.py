@@ -1,9 +1,9 @@
 import re
 import requests
-from typing import Dict, Optional, Tuple
+from typing import Dict, Optional, Tuple, Any, List
 from urllib.parse import urlparse
 
-def get_library_info(library_name: str) -> Optional[Dict]:
+def get_library_info(library_name: str) -> Optional[Dict[str, Any]]:
     """
     Fetch package metadata from PyPI for a given library name.
     Args:
@@ -15,15 +15,16 @@ def get_library_info(library_name: str) -> Optional[Dict]:
     """
     if not re.match(r"^[a-zA-Z0-9_-]+$", library_name):
         raise ValueError("Invalid library name. Only alphanumeric characters, dashes, and underscores are allowed.")
-    url = f"https://pypi.org/pypi/{library_name}/json"
+    url: str = f"https://pypi.org/pypi/{library_name}/json"
     try:
-        response = requests.get(url)
+        response: requests.Response = requests.get(url)
         response.raise_for_status()
-        return response.json()
+        json_data: Dict[str, Any] = response.json()
+        return json_data
     except requests.exceptions.RequestException:
         return None
 
-def get_npm_info(package_name: str) -> Optional[Dict]:
+def get_npm_info(package_name: str) -> Optional[Dict[str, Any]]:
     """
     Fetch package metadata from npm registry for a given package name.
     Args:
@@ -35,11 +36,12 @@ def get_npm_info(package_name: str) -> Optional[Dict]:
     """
     if not re.match(r"^[a-zA-Z0-9_-]+$", package_name):
         raise ValueError("Invalid package name. Only alphanumeric characters, dashes, and underscores are allowed.")
-    url = f"https://registry.npmjs.org/{package_name}"
+    url: str = f"https://registry.npmjs.org/{package_name}"
     try:
-        response = requests.get(url)
+        response: requests.Response = requests.get(url)
         response.raise_for_status()
-        return response.json()
+        json_data: Dict[str, Any] = response.json()
+        return json_data
     except requests.exceptions.RequestException:
         return None
 
@@ -54,7 +56,7 @@ def parse_repo_url(url: str) -> Tuple[Optional[str], Optional[str], Optional[str
     if url.startswith('git+'):
         url = url[4:]
     parsed_url = urlparse(url)
-    path_parts = parsed_url.path.strip('/').split('/')
+    path_parts: List[str] = parsed_url.path.strip('/').split('/')
     if len(path_parts) >= 2:
         org = path_parts[0]
         repo = path_parts[1]
@@ -67,7 +69,7 @@ def parse_repo_url(url: str) -> Tuple[Optional[str], Optional[str], Optional[str
             return 'bitbucket', org, repo
     return None, None, None
 
-def extract_repo_info(info: Dict) -> Tuple[Optional[str], Optional[str], Optional[str], Optional[str]]:
+def extract_repo_info(info: Dict[str, Any]) -> Tuple[Optional[str], Optional[str], Optional[str], Optional[str]]:
     """
     Extract the repository URL and its platform/org/repo from PyPI project metadata.
     Args:
@@ -100,7 +102,7 @@ def extract_repo_info(info: Dict) -> Tuple[Optional[str], Optional[str], Optiona
                 return url, platform, org, repo
     return None, None, None, None
 
-def extract_npm_repo_info(info: Dict) -> Tuple[Optional[str], Optional[str], Optional[str], Optional[str]]:
+def extract_npm_repo_info(info: Dict[str, Any]) -> Tuple[Optional[str], Optional[str], Optional[str], Optional[str]]:
     """
     Extract the repository URL and its platform/org/repo from npm package metadata.
     Args:
@@ -116,7 +118,7 @@ def extract_npm_repo_info(info: Dict) -> Tuple[Optional[str], Optional[str], Opt
     platform, org, repo = parse_repo_url(repo_url)
     return repo_url, platform, org, repo
 
-def get_latest_version_release_date(info: Dict) -> Optional[str]:
+def get_latest_version_release_date(info: Dict[str, Any]) -> Optional[str]:
     """
     Get the release date of the latest version from PyPI package metadata.
     Args:
@@ -132,4 +134,5 @@ def get_latest_version_release_date(info: Dict) -> Optional[str]:
     releases = info["releases"][latest_version]
     if not releases:
         return None
-    return releases[0].get("upload_time_iso_8601")
+    upload_time: Optional[str] = releases[0].get("upload_time_iso_8601")
+    return upload_time

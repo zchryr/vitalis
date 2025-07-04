@@ -1,7 +1,8 @@
 import os
 import requests
 from datetime import datetime, timezone
-from typing import Optional
+from typing import Optional, Dict, Any, List
+from urllib.parse import quote
 from dotenv import load_dotenv
 from ..models.schemas import HealthCheckResult, Policy
 from ..utils.helpers import parse_iso8601_timestamp
@@ -34,7 +35,7 @@ def check_github_health(owner: str, repo: str, policy: Policy, token: Optional[s
     Returns:
         HealthCheckResult: The health check result for the repository.
     """
-    headers = {"Accept": "application/vnd.github.v3+json"}
+    headers: Dict[str, str] = {"Accept": "application/vnd.github.v3+json"}
     if token:
         headers["Authorization"] = f"token {token}"
     # Initialize result object
@@ -46,10 +47,10 @@ def check_github_health(owner: str, repo: str, policy: Policy, token: Optional[s
     )
     try:
         # Fetch repository metadata
-        repo_url = f"{GITHUB_API_BASE}/repos/{owner}/{repo}"
-        repo_response = requests.get(repo_url, headers=headers)
+        repo_url: str = f"{GITHUB_API_BASE}/repos/{owner}/{repo}"
+        repo_response: requests.Response = requests.get(repo_url, headers=headers)
         repo_response.raise_for_status()
-        repo_data = repo_response.json()
+        repo_data: Dict[str, Any] = repo_response.json()
         result.last_activity = repo_data.get("pushed_at")
         if result.last_activity:
             # Calculate days since last activity
@@ -62,18 +63,18 @@ def check_github_health(owner: str, repo: str, policy: Policy, token: Optional[s
             elif result.days_since_last_activity > 90:
                 result.warnings.append("Repository has been inactive for over 90 days")
         # Fetch open issues
-        issues_url = f"{GITHUB_API_BASE}/repos/{owner}/{repo}/issues"
-        issues_response = requests.get(issues_url, headers=headers)
+        issues_url: str = f"{GITHUB_API_BASE}/repos/{owner}/{repo}/issues"
+        issues_response: requests.Response = requests.get(issues_url, headers=headers)
         issues_response.raise_for_status()
         result.open_issues_count = len(issues_response.json())
         # Fetch stars and forks count
         result.stars_count = repo_data.get("stargazers_count", 0)
         result.forks_count = repo_data.get("forks_count", 0)
         # Check for README and LICENSE files in repo root
-        contents_url = f"{GITHUB_API_BASE}/repos/{owner}/{repo}/contents"
-        contents_response = requests.get(contents_url, headers=headers)
+        contents_url: str = f"{GITHUB_API_BASE}/repos/{owner}/{repo}/contents"
+        contents_response: requests.Response = requests.get(contents_url, headers=headers)
         if contents_response.status_code == 200:
-            contents = contents_response.json()
+            contents: List[Dict[str, Any]] = contents_response.json()
             result.has_readme = any(file["name"].lower() in [r.lower() for r in README_FILES] for file in contents)
             result.has_license = any(file["name"].lower() in [l.lower() for l in LICENSE_FILES] for file in contents)
             if policy.require_readme and not result.has_readme:
@@ -99,7 +100,7 @@ def check_gitlab_health(owner: str, repo: str, policy: Policy, token: Optional[s
     Returns:
         HealthCheckResult: The health check result for the repository.
     """
-    headers = {}
+    headers: Dict[str, str] = {}
     if token:
         headers["PRIVATE-TOKEN"] = token
     # Initialize result object
@@ -111,10 +112,10 @@ def check_gitlab_health(owner: str, repo: str, policy: Policy, token: Optional[s
     )
     try:
         # Fetch project metadata
-        project_url = f"{GITLAB_API_BASE}/projects/{owner}%2F{repo}"
-        project_response = requests.get(project_url, headers=headers)
+        project_url: str = f"{GITLAB_API_BASE}/projects/{owner}%2F{repo}"
+        project_response: requests.Response = requests.get(project_url, headers=headers)
         project_response.raise_for_status()
-        project_data = project_response.json()
+        project_data: Dict[str, Any] = project_response.json()
         result.last_activity = project_data.get("last_activity_at")
         if result.last_activity:
             # Calculate days since last activity
@@ -127,21 +128,21 @@ def check_gitlab_health(owner: str, repo: str, policy: Policy, token: Optional[s
             elif result.days_since_last_activity > 90:
                 result.warnings.append("Repository has been inactive for over 90 days")
         # Fetch open issues
-        issues_url = f"{GITLAB_API_BASE}/projects/{owner}%2F{repo}/issues"
-        issues_response = requests.get(issues_url, headers=headers)
+        issues_url: str = f"{GITLAB_API_BASE}/projects/{owner}%2F{repo}/issues"
+        issues_response: requests.Response = requests.get(issues_url, headers=headers)
         issues_response.raise_for_status()
         result.open_issues_count = len(issues_response.json())
         # Fetch stars and forks count
         result.stars_count = project_data.get("star_count", 0)
         result.forks_count = project_data.get("forks_count", 0)
         # Determine default branch for file checks
-        default_branch = project_data.get("default_branch", "master")
+        default_branch: str = project_data.get("default_branch", "master")
         # Check for README files
         result.has_readme = False
         for readme_name in README_FILES:
-            file_url = f"{GITLAB_API_BASE}/projects/{owner}%2F{repo}/repository/files/{requests.utils.quote(readme_name, safe='')}"
-            params = {"ref": default_branch}
-            file_response = requests.get(file_url, headers=headers, params=params)
+            file_url: str = f"{GITLAB_API_BASE}/projects/{owner}%2F{repo}/repository/files/{quote(readme_name, safe='')}"
+            params: Dict[str, str] = {"ref": default_branch}
+            file_response: requests.Response = requests.get(file_url, headers=headers, params=params)
             if file_response.status_code == 200:
                 result.has_readme = True
                 break
@@ -151,10 +152,10 @@ def check_gitlab_health(owner: str, repo: str, policy: Policy, token: Optional[s
         # Check for LICENSE files
         result.has_license = False
         for license_name in LICENSE_FILES:
-            file_url = f"{GITLAB_API_BASE}/projects/{owner}%2F{repo}/repository/files/{requests.utils.quote(license_name, safe='')}"
-            params = {"ref": default_branch}
-            file_response = requests.get(file_url, headers=headers, params=params)
-            if file_response.status_code == 200:
+            license_file_url: str = f"{GITLAB_API_BASE}/projects/{owner}%2F{repo}/repository/files/{quote(license_name, safe='')}"
+            license_params: Dict[str, str] = {"ref": default_branch}
+            license_file_response: requests.Response = requests.get(license_file_url, headers=headers, params=license_params)
+            if license_file_response.status_code == 200:
                 result.has_license = True
                 break
         if policy.require_license and not result.has_license:
