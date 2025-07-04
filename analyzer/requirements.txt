@@ -1,7 +1,7 @@
-fastapi==0.115.12
-uvicorn==0.34.3
+fastapi==0.115.14
+uvicorn==0.35.0
 httpx==0.28.1
-pydantic==2.11.5
+pydantic==2.11.7
 requests==2.32.4
 toml==0.10.2
 pyyaml==6.0.2
